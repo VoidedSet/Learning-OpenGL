@@ -6,14 +6,18 @@ Camera::Camera(int width, int height, glm::vec3 pos) {
 	Camera::Position = pos;
 }
 
-void Camera::Matrix(float FOVdeg, float nearPlane, float farPlane, Shader& shader, const char* uniform) {
-	glm::mat4 view = glm::mat4(1.0f);
-	glm::mat4 proj = glm::mat4(1.0f);
+void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane) {
+	glm::mat4 view = glm::mat4(1.00f);
+	glm::mat4 proj = glm::mat4(1.00f);
 
 	view = glm::lookAt(Position, Position + Orientation, Up);
 	proj = glm::perspective(glm::radians(FOVdeg), (float)(width / height), nearPlane, farPlane);
 
-	glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(proj * view));
+	cameraMatrix = proj * view;
+}
+
+void Camera::Matrix(Shader& shader, const char* uniform) {
+	glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
 }
 
 void Camera::Inputs(GLFWwindow* window)
@@ -100,3 +104,37 @@ void Camera::Inputs(GLFWwindow* window)
 		firstClick = true;
 	}
 }
+
+	void Camera::processInput() {
+		std::ifstream file("gesture.txt");
+		std::string line;
+
+		bool inputProcessed = false;
+
+		if (file.is_open() && std::getline(file, line)) {
+			// Assuming line format is "Direction: Right, Strength: 0.1"
+			std::istringstream iss(line);
+			std::string key, direction;
+			float strength;
+			iss >> direction; // Simplified parsing
+
+			if (direction == "Right") {
+				Position += glm::vec3(0.1f, 0.0f, 0.0f); // Translate right
+				//std::cout << "Right" << std::endl
+				inputProcessed = true;
+			}
+			else if (direction == "Left") {
+				Position -= glm::vec3(0.1f, 0.0f, 0.0f); // Translate left
+				//std::cout << "Left" << std::endl;
+				inputProcessed = true;
+			}
+
+			
+		}
+		file.close();
+
+		if (inputProcessed) {
+			std::ofstream clearFile("gesture.txt", std::ios::trunc);
+			clearFile.close();
+		}
+	}
